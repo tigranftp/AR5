@@ -203,21 +203,41 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     if (earth.trackingState != TrackingState.TRACKING) {
       return
     }
-    earthAnchor?.detach()
+      earthAnchor?.detach()
+
+    var results = floatArrayOf(0.0f)
+
+    android.location.Location.distanceBetween(earth.cameraGeospatialPose.latitude,
+      earth.cameraGeospatialPose.longitude,
+      latLng.latitude, latLng.longitude, results)
 
     val altitude = earth.cameraGeospatialPose.altitude - 1
-// The rotation quaternion of the anchor in the East-Up-South (EUS) coordinate system.
+
     val qx = 0f
     val qy = 0f
     val qz = 0f
     val qw = 1f
+
+    if (results[0]<8.0) {
+      earthAnchor =
+        earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
+
+      activity.view.mapView?.earthMarker?.apply {
+        position = latLng
+        isVisible = true
+      }
+      return
+    }
+
     earthAnchor =
-      earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
+      earth.createAnchor(earth.cameraGeospatialPose.latitude, earth.cameraGeospatialPose.longitude, altitude, qx, qy, qz, qw)
+
 
     activity.view.mapView?.earthMarker?.apply {
-      position = latLng
+      position = LatLng(earth.cameraGeospatialPose.latitude, earth.cameraGeospatialPose.longitude)
       isVisible = true
     }
+
   }
 
   private fun SampleRender.renderCompassAtAnchor(anchor: Anchor) {
